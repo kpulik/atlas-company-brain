@@ -90,6 +90,40 @@ def test_append_version_keeps_history_after_restart(tmp_path, monkeypatch):
         assert next(d for d in versions if d['version'] == 3)['content'] == 'A newer incident finding.'
 
 
+def test_engineering_can_ingest_document_and_retrieve_it_with_visibility_guard(tmp_path, monkeypatch):
+    monkeypatch.setattr(app, 'DB_PATH', tmp_path / 'db.sqlite3')
+    observed = []
+    def generate(question, evidence):
+        observed.extend(evidence)
+        return 'Evidence captured.', 'test'
+    monkeypatch.setattr(app, 'generate', generate)
+    with TestClient(app.app) as client:
+        payload = {'role': 'engineering', 'title': 'Vault migration notes',
+                   'content': 'The quasar-cache recovery key is stored by the platform team.',
+                   'visibility': 'engineering'}
+        assert client.post('/api/documents', json={**payload, 'role': 'support'}).status_code == 403
+        created = client.post('/api/documents', json=payload)
+        assert created.status_code == 200
+        record = created.json()
+        assert record['version'] == 1 and record['kind'] == 'document'
+        assert record['visibility'] == 'engineering' and record['title'] == payload['title']
+        assert len(record['id']) == 36
+        assert not any(d['id'] == record['id'] for d in client.get('/api/documents?role=support').json())
+        result = client.post('/api/investigate', json={'role':'engineering','question':'quasar-cache recovery key'})
+        assert result.status_code == 200
+        assert any(d['id'] == record['id'] for d in observed)
+        observed.clear()
+        result = client.post('/api/investigate', json={'role':'support','question':'quasar-cache recovery key'})
+        assert result.status_code == 200
+        assert all(d['id'] != record['id'] for d in observed)
+        assert all(client.post('/api/documents', json={**payload, 'title': bad}).status_code == 422
+                   for bad in ('  ', 'bad\x00title'))
+        assert client.post('/api/documents', json={**payload, 'content':'\x00'}).status_code == 422
+        assert client.post('/api/documents', json={**payload, 'path':'/tmp/file'}).status_code == 422
+    with TestClient(app.app) as restarted:
+        assert any(d['id'] == record['id'] for d in restarted.get('/api/documents?role=engineering').json())
+
+
 
 def test_settings_persist_and_model_discovery_is_loopback_only(tmp_path, monkeypatch):
     import json

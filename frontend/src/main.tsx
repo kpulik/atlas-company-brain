@@ -33,6 +33,11 @@ function App() {
   const [versionDrafts, setVersionDrafts] = useState<Record<string, string>>({});
   const [versionBusy, setVersionBusy] = useState<string | null>(null);
   const [versionMessage, setVersionMessage] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadVisibility, setUploadVisibility] = useState<'shared' | 'engineering'>('engineering');
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [online, setOnline] = useState(false);
@@ -44,6 +49,7 @@ function App() {
   const [chatgptSession, setChatgptSession] = useState<ChatGPTSession | null>(null);
   const generation = useRef(0);
   const questionRef = useRef<HTMLTextAreaElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const resize = () => { if (questionRef.current) { questionRef.current.style.height = 'auto'; questionRef.current.style.height = `${questionRef.current.scrollHeight}px`; } };
@@ -90,6 +96,40 @@ function App() {
     } catch (err) {
       setVersionMessage(err instanceof Error ? err.message : 'Could not save the source version.');
     } finally { setVersionBusy(null); }
+  }
+
+  function selectUploadFile(file: File | null) {
+    setUploadFile(file);
+    setUploadTitle(file ? file.name.replace(/\.(txt|md)$/i, '') : '');
+    setUploadMessage('');
+    if (!file && uploadInputRef.current) uploadInputRef.current.value = '';
+  }
+
+  async function uploadSource(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!uploadFile || uploadBusy) return;
+    setUploadBusy(true); setUploadMessage('');
+    try {
+      if (!/\.(txt|md)$/i.test(uploadFile.name)) throw new Error('Choose a .txt or .md file.');
+      if (uploadFile.size > 100_000) throw new Error('File must be 100,000 bytes or smaller.');
+      const bytes = await uploadFile.arrayBuffer();
+      let content: string;
+      try { content = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+      catch { throw new Error('File is not valid UTF-8.'); }
+      if (content.includes('\0')) throw new Error('File must not contain NUL characters.');
+      if ([...content].length > 50_000) throw new Error('File must be 50,000 characters or fewer.');
+      if (!uploadTitle.trim()) throw new Error('Enter a title for this source.');
+      await request<Evidence>('/api/documents', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, title: uploadTitle.trim(), content, visibility: uploadVisibility }),
+      });
+      const updated = await request<Evidence[]>(`/api/documents?role=${role}`);
+      setDocuments(Array.isArray(updated) ? updated : []);
+      setUploadMessage(`Uploaded ${uploadTitle.trim()}. Ask ATLAS about a unique term in the file to find it quickly.`);
+      selectUploadFile(null);
+    } catch (err) {
+      setUploadMessage(err instanceof Error ? err.message : 'Could not upload this source.');
+    } finally { setUploadBusy(false); }
   }
 
   useEffect(() => {
@@ -216,6 +256,12 @@ function App() {
       {result ? <><div className="read"><section aria-labelledby="answer-heading"><h2 id="answer-heading">What the sources say</h2><div className="answer-text">{renderAnswer(result.answer)}</div></section><section className="report" aria-labelledby="report-heading"><h2 id="report-heading">Incident report saved</h2><strong>{result.report.title}</strong><p>Report #{result.report.id} is saved in local memory for the selected demo role.</p><details><summary>Read report</summary><div className="answer-text">{renderAnswer(result.report.body)}</div></details></section></div>
       <section className="src" aria-labelledby="sources-heading"><h2 id="sources-heading">Sources</h2>{result.evidence.length ? result.evidence.map((item, index) => <article className="row" id={sourceAnchor(item.id, item.version)} key={`${item.id}-${item.version}`}><span className="n">{index + 1}</span><div><h3>{item.title}</h3><div className="meta">{item.id} · version {item.version}{item.created_at ? ` · ${formatDate(item.created_at)}` : ''}</div></div><p>{item.content}</p></article>) : <p>No accessible evidence matched this question.</p>}</section></> : <section className="intro"><h2>Follow the evidence</h2><p>Run an investigation to see cited sources and a saved incident report.</p></section>}
       <section className="src history-section"><details><summary>Browse source history <span>{documents.length} versions available to {role}</span></summary><div className="history-list">{documents.map(item => <details key={`${item.id}-${item.version}`}><summary>{item.title} <span>v{item.version}</span></summary><p>{item.content}</p><small>{item.id}{item.created_at ? ` · recorded ${formatDate(item.created_at)}` : ''}</small>{canAppendSourceVersion(role) && !documents.some(other => other.id === item.id && Number(other.version) > Number(item.version)) && <form className="version-editor" onSubmit={event => appendSourceVersion(event, item.id)}><label htmlFor={`version-${encodeURIComponent(String(item.id))}`}>Append a source version</label><textarea id={`version-${encodeURIComponent(String(item.id))}`} value={versionDrafts[String(item.id)] ?? ''} onChange={event => setVersionDrafts(current => ({ ...current, [String(item.id)]: event.target.value }))} maxLength={10000} rows={3} placeholder="Enter the updated source content" required /><div className="version-actions"><button className="secondary-button" disabled={versionBusy !== null || !versionDrafts[String(item.id)]?.trim()}>{versionBusy === String(item.id) ? 'Saving…' : 'Save new version'}</button><span role="status" aria-live="polite">{versionMessage}</span></div></form>}</details>)}</div></details></section>
+      {canAppendSourceVersion(role) && <section className="src upload-section" aria-labelledby="upload-heading"><h2 id="upload-heading">Add a source</h2><p className="sub">Upload a plain UTF-8 text or Markdown file. Maximum 50,000 characters and 100,000 bytes.</p><form className="upload-form" onSubmit={uploadSource}>
+        <label htmlFor="source-file">File</label><input ref={uploadInputRef} id="source-file" type="file" accept=".txt,.md,text/plain,text/markdown" onChange={event => selectUploadFile(event.target.files?.[0] ?? null)} />
+        <label htmlFor="source-title">Title</label><input id="source-title" value={uploadTitle} onChange={event => setUploadTitle(event.target.value)} maxLength={200} required />
+        <label htmlFor="source-visibility">Who can see this source?</label><select id="source-visibility" value={uploadVisibility} onChange={event => setUploadVisibility(event.target.value as 'shared' | 'engineering')}><option value="engineering">Engineering only</option><option value="shared">Shared with all roles</option></select>
+        <div className="upload-actions"><button className="secondary-button" disabled={uploadBusy || !uploadFile}>{uploadBusy ? 'Uploading…' : 'Upload source'}</button><span role="status" aria-live="polite">{uploadMessage}</span></div>
+      </form></section>}
     </main><footer>Synthetic demo data. The role switch changes what you see, not who you are.</footer>
   </div>;
 }

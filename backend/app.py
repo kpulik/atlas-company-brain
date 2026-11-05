@@ -4,6 +4,7 @@ import asyncio
 import os
 import re
 import sqlite3
+import uuid
 import urllib.error
 import urllib.request
 from urllib.parse import urlsplit
@@ -318,6 +319,35 @@ def reports(role: Role):
 class SourceUpdate(BaseModel):
     role: Role
     content: str = Field(min_length=1, max_length=10000)
+
+
+class NewDocument(BaseModel):
+    role: Role
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=1, max_length=50000)
+    visibility: Literal['shared', 'engineering'] = 'shared'
+
+    class Config:
+        extra = 'forbid'
+
+
+@app.post('/api/documents')
+def create_document(payload: NewDocument):
+    # Roles are simulated; a real deployment must derive this from authenticated identity.
+    if payload.role != 'engineering':
+        raise HTTPException(status_code=403, detail='Only the engineering demo role can add documents')
+    title = payload.title.strip()
+    content = payload.content.strip()
+    if not title or not content or '\x00' in payload.title or '\x00' in payload.content:
+        raise HTTPException(status_code=422, detail='Title and content must be nonblank and contain no NUL characters')
+    source_id = str(uuid.uuid4())
+    with closing(connect()) as db:
+        db.execute('''INSERT INTO source_versions (source_id, version, title, kind, created_at, visibility, content)
+                      VALUES (?, 1, ?, 'document', strftime('%Y-%m-%dT%H:%M:%SZ','now'), ?, ?)''',
+                   (source_id, title, payload.visibility, content))
+        db.commit()
+        return dict(db.execute('''SELECT source_id AS id,version,title,kind,created_at,visibility,content
+                                  FROM source_versions WHERE source_id = ? AND version = 1''', (source_id,)).fetchone())
 
 
 @app.post('/api/documents/{source_id}/versions')

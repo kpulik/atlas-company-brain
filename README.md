@@ -21,7 +21,7 @@ Open **http://127.0.0.1:5173**. Keep the terminal open. Ctrl-C stops both servic
 
 ## 2. Evaluate the company brain in five minutes
 
-1. Leave **Engineering** selected and click **Investigate** with the sample question. In excerpt mode this works without an account or model.
+1. Leave **Engineering** selected. Upload a small `.txt` or `.md` document, then ask a question using distinctive terms from it. Or click **Investigate** with the sample question to use the seeded OrionCart records. In excerpt mode this works without an account or model.
 2. Follow a citation to its source. Read the incident report and browse the older and newer versions of INC-241. The timeline displays source record times, not inferred incident event times.
 3. Switch to **Support** and investigate again. The engineering conversation is excluded before evidence reaches the model. Demo roles are selectable presets, not authenticated identities.
 4. Open **Model settings**. Choose **ChatGPT subscription**, continue in your browser, and allow plan usage if eligible. Find available models, select one, save, and investigate again. Alternatively choose a running local OpenAI-compatible server, enter its URL, find models and save.
