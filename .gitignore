@@ -13,3 +13,12 @@ dist/
 .DS_Store
 
 *.tsbuildinfo
+# Local runtime state and credentials
+.runtime/
+.logs/
+*.log
+chatgpt-auth.json
+chatgpt-host.json
+*.pem
+*.key
+.triggerware/

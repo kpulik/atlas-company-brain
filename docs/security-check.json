@@ -1,0 +1,6 @@
+{
+  "published_commits_checked": 2,
+  "credential_pattern_file_hits": [],
+  "sensitive_filename_hits": [],
+  "scope": "all reachable commits in fresh public clone; targeted patterns and filenames, not a guarantee against every secret format"
+}

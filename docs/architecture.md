@@ -17,7 +17,7 @@ A self-contained SQLite index is quick to reproduce and supports version history
 
 ## Consequences
 
-The local demonstration does not establish production identity, authorization, external system integration, or semantic graph search. Deployment would require authenticated identities, resource permissions, and production storage controls.
+The local demonstration does not establish production identity, authorization, external system integration, or semantic graph search. Deployment would require authenticated identities, resource permissions, and production storage controls. The optional ChatGPT provider uses the official SDK with macOS Keychain. TriggerWare queries a fixed synthetic table and saves its records in source memory. App Starter supplies the shared OrgRole enum for demo editing capabilities.
 
 ## Actions
 

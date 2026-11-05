@@ -1,0 +1,10 @@
+{
+  "name": "atlas-chatgpt-provider",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"build": "tsc -p tsconfig.json", "test": "node --test test/*.test.mjs"},
+  "dependencies": {"@napi-rs/keyring": "2.1.1", "jose": "^6.1.0", "openai": "^7.21.0", "proper-lockfile": "^4.1.2"},
+  "devDependencies": {"@types/node": "^22.0.0", "@types/proper-lockfile": "^4.1.4", "typescript": "^5.9.3"}
+}

@@ -18,11 +18,11 @@ A React and TypeScript dashboard talks to a Python FastAPI service. SQLite store
 
 ## Challenges and limitations
 
-We prioritized a reproducible local workflow and visible evidence. Keyword retrieval is not semantic search, and the demo does not implement production authentication. A local model requires separate setup. Cognee, TriggerWare, live Slack, and external ticket creation are not integrated.
+We prioritized a reproducible local workflow and visible evidence. Keyword retrieval is not semantic search, and the demo does not implement production authentication. A local model requires separate setup. Optional ChatGPT subscription sign-in was exercised with one account and model. TriggerWare supplies synthetic signals through its official SDK and local server. App Starter contributes its shared organization-role enum to demo capability controls. Cognee, live Slack, and external ticket creation are not integrated.
 
 ## Built with
 
-React, TypeScript, Vite, Python, FastAPI, SQLite.
+React, TypeScript, Vite, Python, FastAPI, SQLite, TriggerWare Python SDK, OpenAI Sign in with ChatGPT DevKit, App Starter shared OrgRole enum.
 
 ## Demo sequence
 
