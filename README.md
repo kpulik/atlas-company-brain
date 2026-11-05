@@ -2,6 +2,18 @@
 
 Investigate a checkout incident across versioned documents, team conversations, and TriggerWare signals. Every answer has source citations and creates a saved incident report. All company data is synthetic.
 
+## Built for the Company Brain Hackathon
+
+ATLAS was built for **Company Brain Hackathon: Build an AI Agent That Knows Your Organization**, hosted by **TechEquity Ai** on **November 4, 2026**, at Snowflake's Silicon Valley AI Hub in Menlo Park, California, as part of its monthly forum series.
+
+The challenge asks builders to connect company knowledge from documents, meeting notes, policies, support content, and internal tools, then use that knowledge in a useful way. ATLAS applies that idea to a fictional checkout incident: uploaded company records and TriggerWare signals become cited evidence for an investigation and a saved report.
+
+The Devpost rubric weights technical execution, use of the brain, and agentic capability at 25% each, creativity at 15%, and real-world value at 10%. The event also shared TriggerWare's SDK and Digo's App Starter; our exact integration scope is documented below.
+
+**Submission note:** the organizer's November 4 announcement says a video must be submitted by **10 PM Pacific** to be eligible for the TriggerWare prizes. An optional-looking video field does not supersede that announcement.
+
+[Event page](https://luma.com/nov-hackathon-2026) · [Devpost challenge](https://company-brain-techequity.devpost.com/) · [Event context and sources](docs/event.md)
+
 ## 1. Install and start
 
 Requires Git, Python 3.10+, Node.js 22+, and npm. macOS is required for the optional ChatGPT subscription connection.
